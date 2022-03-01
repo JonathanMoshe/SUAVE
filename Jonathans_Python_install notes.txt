@@ -1,0 +1,54 @@
+Download and install Python 3.9.10 and OpenVSP
+
+Search Windows for "edit environment variables for your computer"
+In the window that pops up, under the 'Advanced' tab, click 'Environment Variables'
+In the System variable window, find the Path variable and press 'Edit'
+Select the 'New' button and add the following 3 Python paths at the end of the list:
+"C:\Users\jmoshe\AppData\Local\Programs\Python\Python39"
+"C:\Users\jmoshe\AppData\Local\Programs\Python\Python39\Scripts"
+"C:\OpenVSP-3.26.1-win64-Python3.9\OpenVSP-3.26.1-win64\python\openvsp\openvsp"
+
+Installing Python should also install the packages installer, called Pip.
+Verify it is installed by running the following command in cmd:
+pip --version
+If it doesn't run the following command in cmd:
+python get-pip.py
+
+Now install the required packages by running the following commands:
+pip install numpy
+pip install scipy
+pip install matplotlib
+pip install sklearn
+pip install plotly
+
+Now you can install SUAVE
+Create a directory where you want to install SUAVE, i.e. C:\SUAVE
+From this directory, excute the following command...
+python setup.py develop
+
+Open "C:\Program Files\OpenVSP-3.26.1-win64\python\openvsp\openvsp\__init__.py" (or wherever you installed OpenVSP)
+Reorder "from .vsp...." to line 2 instead of line 1.
+
+To get openVSP to work with SUAVE...
+Navigate to C:\OpenVSP-3.26.1-win64-Python3.9\OpenVSP-3.26.1-win64\python (or wherever you installed this)
+Git Bash in here... 
+pip install -r requirements-dev.txt
+
+Added to env. vars..
+c:\program files\openvsp-3.26.1-win64\python\openvsp\openvsp\
+
+In this folder...
+C:\Users\jmoshe\OneDrive - Genesis Air Mobility\Documents\GitHub\SUAVE\trunk\SUAVE\Input_Output\OpenVSP
+Opened each .py file and change "import vsp as vsp" to "import openvsp as vsp"
+
+To use git within VScode (after installing git)
+Open terminal...
+git config --global user.name "Your Name"
+git config --global user.email "YourEmail@YourDomain"
+To check if set up correctly...
+git config --global --list
+To exit the list view...
+:q
+
+
+
