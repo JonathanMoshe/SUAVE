@@ -3,14 +3,14 @@
 # 
 # Created:  Jan 2022, R. Erhard
 # Modified:       
-
+from SUAVE.Core.Utilities import interp2d 
 import numpy as np
 ## @ingroup Methods-Aerodynamics-Common-Fidelity_Zero-Lift
-def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,a_loc,a_geo,cl_sur,cd_sur,ctrl_pts,Nr,Na,tc,use_2d_analysis):
+def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,airfoils,a_loc,ctrl_pts,Nr,Na,tc,use_2d_analysis):
     """
     Cl, Cdval = compute_airfoil_aerodynamics( beta,c,r,R,B,
                                               Wa,Wt,a,nu,
-                                              a_loc,a_geo,cl_sur,cd_sur,
+                                              airfoils,a_loc
                                               ctrl_pts,Nr,Na,tc,use_2d_analysis )
 
     Computes the aerodynamic forces at sectional blade locations. If airfoil
@@ -37,11 +37,7 @@ def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,a_loc,a_geo,cl_sur,cd_s
        Wt                         tangential velocity                             [-]
        a                          speed of sound                                  [-]
        nu                         viscosity                                       [-]
-
-       a_loc                      Locations of specified airfoils                 [-]
-       a_geo                      Geometry of specified airfoil                   [-]
-       cl_sur                     Lift Coefficient Surrogates                     [-]
-       cd_sur                     Drag Coefficient Surrogates                     [-]
+       airfoil_data               Data structure of airfoil polar information     [-]
        ctrl_pts                   Number of control points                        [-]
        Nr                         Number of radial blade sections                 [-]
        Na                         Number of azimuthal blade stations              [-]
@@ -53,24 +49,23 @@ def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,a_loc,a_geo,cl_sur,cd_s
        Cdval                    Drag Coefficients  (before scaling)       [-]
        alpha                    section local angle of attack             [rad]
 
-    """
-
+    """ 
     alpha    = beta - np.arctan2(Wa,Wt)
     W        = (Wa*Wa + Wt*Wt)**0.5
     Ma       = W/a
     Re       = (W*c)/nu
 
     # If propeller airfoils are defined, use airfoil surrogate
-    if a_loc != None:
-        # Compute blade Cl and Cd distribution from the airfoil data
-        dim_sur = len(cl_sur)
+    if a_loc != None:  
+        # Compute blade Cl and Cd distribution from the airfoil data 
         if use_2d_analysis:
             # return the 2D Cl and CDval of shape (ctrl_pts, Nr, Na)
             Cl      = np.zeros((ctrl_pts,Nr,Na))
             Cdval   = np.zeros((ctrl_pts,Nr,Na))
-            for jj in range(dim_sur):
-                Cl_af           = cl_sur[a_geo[jj]](Re,alpha,grid=False)
-                Cdval_af        = cd_sur[a_geo[jj]](Re,alpha,grid=False)
+            for jj,airfoil in enumerate(airfoils):
+                pd              = airfoil.polars
+                Cl_af           = interp2d(Re,alpha,pd.reynolds_numbers, pd.angle_of_attacks, pd.lift_coefficients) 
+                Cdval_af        = interp2d(Re,alpha,pd.reynolds_numbers, pd.angle_of_attacks, pd.drag_coefficients)
                 locs            = np.where(np.array(a_loc) == jj )
                 Cl[:,locs,:]    = Cl_af[:,locs,:]
                 Cdval[:,locs,:] = Cdval_af[:,locs,:]
@@ -79,15 +74,18 @@ def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,a_loc,a_geo,cl_sur,cd_s
             Cl      = np.zeros((ctrl_pts,Nr))
             Cdval   = np.zeros((ctrl_pts,Nr))
 
-            for jj in range(dim_sur):
-                Cl_af         = cl_sur[a_geo[jj]](Re,alpha,grid=False)
-                Cdval_af      = cd_sur[a_geo[jj]](Re,alpha,grid=False)
+            for jj,airfoil in enumerate(airfoils):
+                pd            = airfoil.polars
+                Cl_af         = interp2d(Re,alpha,pd.reynolds_numbers, pd.angle_of_attacks, pd.lift_coefficients)
+                Cdval_af      = interp2d(Re,alpha,pd.reynolds_numbers, pd.angle_of_attacks, pd.drag_coefficients)
                 locs          = np.where(np.array(a_loc) == jj )
                 Cl[:,locs]    = Cl_af[:,locs]
                 Cdval[:,locs] = Cdval_af[:,locs]
     else:
         # Estimate Cl max
-        Cl_max_ref = -0.0009*tc**3 + 0.0217*tc**2 - 0.0442*tc + 0.7005
+        tc_1 = tc*100
+        Cl_max_ref = -0.0009*tc_1**3 + 0.0217*tc_1**2 - 0.0442*tc_1 + 0.7005
+        Cl_max_ref[Cl_max_ref<0.7] = 0.7
         Re_ref     = 9.*10**6
         Cl1maxp    = Cl_max_ref * ( Re / Re_ref ) **0.1
 
@@ -99,7 +97,8 @@ def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,a_loc,a_geo,cl_sur,cd_s
         Cl[alpha>=np.pi/2] = 0.
 
         # Scale for Mach, this is Karmen_Tsien
-        Cl[Ma[:,:]<1.] = Cl[Ma[:,:]<1.]/((1-Ma[Ma[:,:]<1.]*Ma[Ma[:,:]<1.])**0.5+((Ma[Ma[:,:]<1.]*Ma[Ma[:,:]<1.])/(1+(1-Ma[Ma[:,:]<1.]*Ma[Ma[:,:]<1.])**0.5))*Cl[Ma<1.]/2)
+        KT_cond = np.logical_and((Ma[:,:]<1.),(Cl>0))
+        Cl[KT_cond] = Cl[KT_cond]/((1-Ma[KT_cond]*Ma[KT_cond])**0.5+((Ma[KT_cond]*Ma[KT_cond])/(1+(1-Ma[KT_cond]*Ma[KT_cond])**0.5))*Cl[KT_cond]/2)
 
         # If the blade segments are supersonic, don't scale
         Cl[Ma[:,:]>=1.] = Cl[Ma[:,:]>=1.]
@@ -116,7 +115,7 @@ def compute_airfoil_aerodynamics(beta,c,r,R,B,Wa,Wt,a,nu,a_loc,a_geo,cl_sur,cd_s
 
 
 
-def compute_inflow_and_tip_loss(r,R,Wa,Wt,B):
+def compute_inflow_and_tip_loss(r,R,Wa,Wt,B,et1=1,et2=1,et3=1):
     """
     Computes the inflow, lamdaw, and the tip loss factor, F.
 
@@ -132,27 +131,21 @@ def compute_inflow_and_tip_loss(r,R,Wa,Wt,B):
        Wa         axial velocity                                                   [m/s]
        Wt         tangential velocity                                              [m/s]
        B          number of rotor blades                                           [-]
-                 
+       et1        tuning parameter for tip loss function 
+       et2        tuning parameter for tip loss function 
+       et3        tuning parameter for tip loss function 
+       
     Outputs:               
        lamdaw     inflow ratio                                                     [-]
        F          tip loss factor                                                  [-]
        piece      output of a step in tip loss calculation (needed for residual)   [-]
     """
-    lamdaw            = r*Wa/(R*Wt)
-    lamdaw[lamdaw<0.] = 0.
-    f                 = (B/2.)*(1.-r/R)/lamdaw
-    f[f<0.]           = 0.
-    
-    piece             = np.exp(-f)
-    F                 = 2.*np.arccos(piece)/np.pi
+    lamdaw             = r*Wa/(R*Wt)
+    lamdaw[lamdaw<=0.] = 1e-12
 
-    Rtip = R
-    et1, et2, et3, maxat = 1,1,1,-np.inf
-    tipfactor = B/2.0*(  (Rtip/r)**et1 - 1  )**et2/lamdaw**et3
-    tipfactor[tipfactor<0.]   = 0.
-    Ftip = 2.*np.arccos(np.exp(-tipfactor))/np.pi
-    
-    F = Ftip
-    
+    tipfactor = B/2.0*(  (R/r)**et1 - 1  )**et2/lamdaw**et3 
 
-    return lamdaw, F, piece
+    piece = np.exp(-tipfactor)
+    Ftip  = 2.*np.arccos(piece)/np.pi  
+
+    return lamdaw, Ftip, piece

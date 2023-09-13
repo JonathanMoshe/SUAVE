@@ -67,15 +67,15 @@ def main():
                                       grid_points     = 5,
                                       altitude_ceiling= 1e4 * Units.ft,
                                       max_speed       = 150 * Units.knots,
-                                      test_omega      = 2400 * Units.rpm,
+                                      test_omega      = 1900 * Units.rpm,
                                       display_plot=True)
 
 
-    climb_rate_r = [[  0.        ,   0.        ,   0.        ,   0.        ,   0.        ],
-                    [  0.        ,   0.        ,   0.        ,   0.        ,   0.        ],
-                    [365.28164616,   0.        ,   0.        ,   0.        ,   0.        ],
-                    [671.06501573, 565.12568368, 462.33970468, 362.03685772, 263.49032629],
-                    [677.20427984, 577.26538105, 483.80816586, 395.7082193 , 311.81340271]]
+    climb_rate_r = [[  0.        ,   0.        ,   0.        ,   0.        ,              0.        ],
+                    [  0.        ,   0.        ,   0.        ,   0.        ,              0.        ],
+                    [487.63179542,   0.        ,   0.        ,   0.        ,              0.        ],
+                    [772.92643016, 666.52055528, 562.06865597, 459.0544259 ,            356.95140061],
+                    [447.06298061, 375.79491086, 305.65495126, 236.2785227 ,            167.26496564]]
 
 
     assert (np.all(np.nan_to_num(np.abs(climb_rate-climb_rate_r)/climb_rate_r) < 1e-6)), "Electric V_h Diagram Regression Failed"

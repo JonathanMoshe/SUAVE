@@ -256,9 +256,9 @@ Normal: {8}, {9}, {10}
     Y         = np.round(prop.origin[0][1],5)
     Z         = np.round(prop.origin[0][2],5)
     rotations = np.dot(prop.body_to_prop_vel(),np.array([-1,0,0])) # The sign is because props point opposite flow
-    Xn        = np.round(rotations[0],5)
-    Yn        = np.round(rotations[1],5)
-    Zn        = np.round(rotations[2],5)
+    Xn        = np.round(rotations[0][0],5)
+    Yn        = np.round(rotations[0][1],5)
+    Zn        = np.round(rotations[0][2],5)
 
     beta_3_4  = np.interp(prop.tip_radius*0.75,prop.radius_distribution,beta)
 
@@ -332,7 +332,7 @@ def make_airfoil_text(vsp_bem,prop):
     """
 
     N             = len(prop.radius_distribution)
-    airfoil_data  = import_airfoil_geometry(prop.airfoil_geometry)
+    airfoil_data  = prop.airfoil_data
     a_sec         = prop.airfoil_polar_stations
     for i in range(N):
         airfoil_station_header = '\nSection ' + str(i) + ' X, Y\n'

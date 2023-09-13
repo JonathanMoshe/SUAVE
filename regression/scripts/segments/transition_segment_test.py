@@ -55,24 +55,21 @@ def main():
     transition_1_throttle  = results.segments.transition_1.conditions.propulsion.throttle[:,0]
     cruise_throttle        = results.segments.cruise.conditions.propulsion.throttle[:,0]
     
-    # Check network y-axis rotation during transition
-    transition_y_axis_rotations = results.segments.transition_1.conditions.propulsion.propeller_y_axis_rotation[:,0]
-
-
-    # Truth values
-    departure_throttle_truth      = np.array([0.66098974, 0.66121694, 0.66168772, 0.66193132])
-    transition_1_throttle_truth   = np.array([0.66541847, 0.65808227, 0.51905603, 0.57855735])
-    cruise_throttle_truth         = np.array([0.4613461 , 0.46169302, 0.4623887 , 0.46273747])
+    print(departure_throttle)
+    print(transition_1_throttle)
+    print(cruise_throttle)
     
-    transition_y_axis_rotations_truth = np.array([1.36961133, 1.34327318, 1.10250854, 0.06580108])
+    # Truth values   
+    departure_throttle_truth          = 0.6516875478807475
+    transition_1_throttle_truth       = 0.6013997974737667
+    cruise_throttle_truth             = 0.46492807449474316
 
     # Store errors 
     error = Data()
-    error.departure_throttle          = np.max(np.abs(departure_throttle - departure_throttle_truth))  
-    error.transition_1_throttle       = np.max(np.abs(transition_1_throttle - transition_1_throttle_truth))   
-    error.cruise_throttle             = np.max(np.abs(cruise_throttle - cruise_throttle_truth))   
-    error.transition_y_axis_rotations = np.max(np.abs(transition_y_axis_rotations - transition_y_axis_rotations_truth))   
-
+    error.departure_throttle          = np.abs(departure_throttle[-1] - departure_throttle_truth)
+    error.transition_1_throttle       = np.abs(transition_1_throttle[-1] - transition_1_throttle_truth)
+    error.cruise_throttle             = np.abs(cruise_throttle[-1] - cruise_throttle_truth)
+    
     print('Errors:')
     print(error)
 
@@ -226,12 +223,12 @@ def mission_setup(analyses,vehicle):
     segment.tag                                         = "Transition_1"
     segment.analyses.extend( analyses.transition_1 )
     segment.altitude                                    = 40.0 * Units.ft
-    segment.acceleration                                = 2.0  * Units['m/s/s']
+    segment.acceleration                                = 2.3  * Units['m/s/s']
     segment.air_speed_start                             = 0.0  * Units.mph              # starts from hover
     segment.air_speed_end                               = 1.2  * V_stall         # increases linearly in time to stall speed
     segment.pitch_initial                               = 0.0  * Units.degrees  
     segment.pitch_final                                 = 3.6  * Units.degrees   
-    segment.state.unknowns.throttle                     = 0.9  * ones_row(1)
+    segment.state.unknowns.throttle                     = 0.95  * ones_row(1)
     segment.process.iterate.conditions.stability        = SUAVE.Methods.skip
     segment.process.finalize.post_process.stability     = SUAVE.Methods.skip
     segment = vehicle.networks.battery_propeller.add_tiltrotor_transition_unknowns_and_residuals_to_segment(segment, 

@@ -12,8 +12,7 @@ from SUAVE.Components import Wings
 from SUAVE.Components.Energy.Energy_Component import Energy_Component
 from SUAVE.Analyses.Propulsion.Rotor_Wake_Fidelity_Zero import Rotor_Wake_Fidelity_Zero
 from SUAVE.Methods.Propulsion.Rotor_Wake.Fidelity_One.fidelity_one_wake_convergence import fidelity_one_wake_convergence
-from SUAVE.Methods.Propulsion.Rotor_Wake.Fidelity_One.compute_wake_induced_velocity import compute_wake_induced_velocity
-
+from SUAVE.Methods.Propulsion.Rotor_Wake.Fidelity_One.compute_wake_induced_velocity import compute_wake_induced_velocity 
 from SUAVE.Methods.Aerodynamics.Common.Fidelity_Zero.Lift.extract_wing_VD import extract_wing_collocation_points
 
 # package imports
@@ -56,7 +55,7 @@ class Rotor_Wake_Fidelity_One(Energy_Component):
 
         self.tag                        = 'rotor_wake'
         self.wake_method                = 'Fidelity_One'
-        self.wake_vortex_distribution   = Data()
+        self.vortex_distribution        = Data()
         self.wake_method_fidelity       = 0
         self.semi_prescribed_converge   = False      # flag for convergence on semi-prescribed wake shape
         self.vtk_save_flag              = False      # flag for saving vtk outputs of wake
@@ -73,7 +72,7 @@ class Rotor_Wake_Fidelity_One(Energy_Component):
         
         # flags for slipstream interaction
         self.slipstream                 = False
-        self.verbose                    = True
+        self.verbose                    = False
         
     def initialize(self,rotor,conditions):
         """
@@ -279,7 +278,6 @@ class Rotor_Wake_Fidelity_One(Energy_Component):
                 wVD.reshaped_wake[mat] += offset[2]        
         
         # update wake distribution
-        self.wake_vortex_distribution = wVD
         self.vortex_distribution = wVD
         return
         
